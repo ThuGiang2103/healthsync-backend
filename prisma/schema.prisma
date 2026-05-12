@@ -1,0 +1,75 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String   @id @default(uuid())
+  email           String   @unique
+  passwordHash    String?
+  fullName        String?
+  avatarUrl       String?
+  dateOfBirth     DateTime?
+  gender          String?
+  height          Float?
+  weight          Float?
+  bloodType       String?
+  medicalHistory  String?
+  role            String   @default("user")
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  healthMetrics   HealthMetric[]
+  reminders       Reminder[]
+  chatSessions    ChatSession[]
+}
+
+model HealthMetric {
+  id          String   @id @default(uuid())
+  userId      String
+  metricType  String
+  value       Float
+  unit        String
+  recordedAt  DateTime
+  note        String?
+  createdAt   DateTime @default(now())
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Reminder {
+  id           String   @id @default(uuid())
+  userId       String
+  title        String
+  description  String?
+  reminderTime DateTime   // Sửa thành DateTime
+  repeatType   String
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ChatSession {
+  id            String        @id @default(uuid())
+  userId        String
+  startedAt     DateTime      @default(now())
+  messages      ChatMessage[]
+
+  user          User          @relation(fields: [userId], references: [id])
+}
+
+model ChatMessage {
+  id         String      @id @default(uuid())
+  sessionId  String
+  sender     String
+  content    String
+  createdAt  DateTime    @default(now())
+
+  session    ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+}
