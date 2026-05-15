@@ -354,7 +354,32 @@ app.get('/api/admin/stats', authMiddleware, adminMiddleware, async (req, res) =>
     res.status(500).json({ message: 'Loi server' });
   }
 });
-
+// Xóa dữ liệu hệ thống (Admin only)
+app.delete('/api/admin/data/:type', async (req, res) => {
+  const token = req.headers.authorization?.split(' ')[1];
+  if (!token) return res.status(401).json({ message: 'Chua dang nhap' });
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    if (decoded.role !== 'admin') return res.status(403).json({ message: 'Khong co quyen' });
+    const { type } = req.params;
+    let count = 0;
+    if (type === 'metrics') {
+      const r = await prisma.healthMetric.deleteMany();
+      count = r.count;
+    } else if (type === 'reminders') {
+      const r = await prisma.reminder.deleteMany();
+      count = r.count;
+    } else if (type === 'chats') {
+      const r = await prisma.chatSession.deleteMany();
+      count = r.count;
+    } else {
+      return res.status(400).json({ message: 'Loai du lieu khong hop le' });
+    }
+    res.json({ message: `Da xoa ${count} ban ghi`, count });
+  } catch (error) {
+    res.status(500).json({ message: 'Loi server' });
+  }
+});
 // ─── START ────────────────────────────────────────────────────────
 app.listen(PORT, () => {
   console.log(`Server HealthSync AI dang chay tai http://localhost:${PORT}`);
